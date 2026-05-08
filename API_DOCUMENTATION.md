@@ -125,7 +125,7 @@ Used for creating, updating, and returning user data.
 |---|---|---|
 | `id` | `String` | MongoDB document identifier |
 | `username` | `String` | Display name of the user |
-| `email` | `String` | User email address |
+| `email` | `String` | User email address (must be unique) |
 
 ### Example JSON
 
@@ -294,6 +294,7 @@ Creates a new user.
 **Possible Status Codes**
 - `201 Created`
 - `400 Bad Request`
+- `409 Conflict`
 - `500 Internal Server Error`
 
 ---
@@ -310,6 +311,42 @@ Returns a user by ID.
 
 **Path Variables:**
 - `id` — user ID
+
+**Query Params:** None
+
+**Request Body:** None
+
+**Response Body:** `UserDto`
+
+**Example Response**
+
+```json
+{
+  "id": "6636f3c2a7f1b42c9e4d1a10",
+  "username": "Axel",
+  "email": "axel@example.com"
+}
+```
+
+**Possible Status Codes**
+- `200 OK`
+- `404 Not Found`
+- `500 Internal Server Error`
+
+---
+
+### `GET /users/email/{email}`
+
+Returns a user by email.
+
+**HTTP Method:** `GET`
+
+**URL:** `/api/users/email/{email}`
+
+**Description:** Fetches a single user using the email field.
+
+**Path Variables:**
+- `email` — user email (URL-encoded, for example `axel%40example.com`)
 
 **Query Params:** None
 
@@ -417,6 +454,7 @@ Updates an existing user.
 - `200 OK`
 - `400 Bad Request`
 - `404 Not Found`
+- `409 Conflict`
 - `500 Internal Server Error`
 
 ---
@@ -792,6 +830,16 @@ Returned when the requested resource does not exist.
 User not found with id: 6636f3c2a7f1b42c9e4d1a10
 ```
 
+## 409 Conflict
+
+Returned when a request tries to use an email that already exists.
+
+### Example response
+
+```txt
+Email already exists: axel@example.com
+```
+
 ## 500 Internal Server Error
 
 Returned for unexpected server-side errors.
@@ -826,19 +874,41 @@ A simple and practical React flow is:
 
 # CORS Notes
 
-No explicit CORS configuration is present in the current backend.
+The backend includes a global CORS configuration for `/api/**`.
 
 ## What this means for the frontend
-If your React app runs on a different origin, for example:
+Default allowed frontend origins are:
 
 ```txt
 http://localhost:5173
+http://localhost:3000
 ```
 
-then the browser may block requests unless you:
+Requests from other origins will be blocked by the browser unless you update backend config.
 
-- add CORS support in Spring Boot, or
-- use a local development proxy in the React app
+The allowed origins are configured via:
+
+```txt
+app.cors.allowed-origins
+```
+
+in `src/main/resources/application.properties`.
+
+## Current CORS behavior
+
+- Applies to `/api/**`
+- Allowed methods: `GET`, `POST`, `PUT`, `DELETE`, `OPTIONS`
+- Allowed headers: `Content-Type`, `Accept`, `Authorization`
+- Credentials: disabled (`allowCredentials(false)`)
+
+## If your frontend uses another local origin
+For example:
+
+```txt
+http://localhost:4173
+```
+
+add it to `app.cors.allowed-origins` and restart the backend.
 
 ## Development expectation
 For local development, the frontend usually needs one of these setups:
@@ -890,5 +960,6 @@ For local development, the frontend usually needs one of these setups:
 - `204 No Content` — successful delete
 - `400 Bad Request` — invalid input
 - `404 Not Found` — missing resource
+- `409 Conflict` — duplicate email
 - `500 Internal Server Error` — unexpected failure
 

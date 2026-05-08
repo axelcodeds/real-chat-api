@@ -1,6 +1,7 @@
 package dev.axeldiego.realchatapi.exception;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -15,6 +16,16 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(IllegalArgumentException.class)
 	public ResponseEntity<String> handleBadRequest(IllegalArgumentException ex) {
 		return ResponseEntity.badRequest().body(ex.getMessage());
+	}
+
+	@ExceptionHandler(EmailAlreadyExistsException.class)
+	public ResponseEntity<String> handleConflict(EmailAlreadyExistsException ex) {
+		return ResponseEntity.status(409).body(ex.getMessage());
+	}
+
+	@ExceptionHandler(DuplicateKeyException.class)
+	public ResponseEntity<String> handleMongoDuplicateKey(DuplicateKeyException ex) {
+		return ResponseEntity.status(409).body("Email already exists");
 	}
 }
 
